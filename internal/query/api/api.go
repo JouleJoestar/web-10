@@ -2,30 +2,59 @@ package api
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/labstack/echo/v4"
+	"web-10/internal/query/usecase"
 )
 
 type Server struct {
-	server  *echo.Echo
-	address string
-
-	uc Usecase
+	Address string
+	Router  *echo.Echo
+	uc      *usecase.Usecase
 }
 
-func NewServer(ip string, port int, uc Usecase) *Server {
-	api := Server{
-		uc: uc,
+func NewServer(ip string, port int, uc *usecase.Usecase) *Server {
+	e := echo.New()
+	srv := &Server{
+		Address: fmt.Sprintf("%s:%d", ip, port),
+		Router:  e,
+		uc:      uc,
 	}
 
-	api.server = echo.New()
-	api.server.GET("/api/user", api.GetUser)
-	api.server.POST("/api/user/create", api.PostUser)
+	srv.Router.GET("/api/user", srv.GetUser)
+	srv.Router.POST("/api/user/create", srv.PostUser)
 
-	api.address = fmt.Sprintf("%s:%d", ip, port)
-
-	return &api
+	return srv
 }
 
-func (api *Server) Run() {
-	api.server.Logger.Fatal(api.server.Start(api.address))
+func (srv *Server) GetUser(c echo.Context) error {
+	name := c.QueryParam("name")
+	if name == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Name parameter is required"})
+	}
+
+	user, err := srv.uc.GetUser(name)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	return c.String(http.StatusOK, "Hello, "+user+"!")
+}
+
+func (srv *Server) PostUser(c echo.Context) error {
+	var input struct {
+		Name string `json:"name"`
+	}
+
+	if err := c.Bind(&input); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	}
+
+	err := srv.uc.CreateUser(input.Name)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusCreated, map[string]string{"message": "Запись добавлена!"})
 }

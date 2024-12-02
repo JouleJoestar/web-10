@@ -1,19 +1,19 @@
 package usecase
 
-import "github.com/ValeryBMSTU/web-10/internal/query/provider"
+import "web-10/internal/query/provider"
 
 type Usecase struct {
-	dbProvider *provider.DatabaseProvider
+	p *provider.Provider
 }
 
-func NewUsecase(dp *provider.DatabaseProvider) *Usecase {
-	return &Usecase{dbProvider: dp}
+func NewUsecase(p *provider.Provider) *Usecase {
+	return &Usecase{p: p}
 }
 
-func (uc *Usecase) FetchUser(name string) (string, error) {
-	return uc.dbProvider.SelectUser(name)
+func (u *Usecase) GetUser(name string) (string, error) {
+	return u.p.SelectUser(name)
 }
 
-func (uc *Usecase) CreateUser(name string) error {
-	return uc.dbProvider.InsertUser(name)
+func (u *Usecase) CreateUser(name string) error {
+	return u.p.InsertUser(name)
 }

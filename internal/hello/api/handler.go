@@ -2,8 +2,8 @@ package api
 
 import (
 	"errors"
-	"github.com/ValeryBMSTU/web-10/pkg/vars"
 	"net/http"
+	"web-10/pkg/vars"
 
 	"github.com/labstack/echo/v4"
 )
