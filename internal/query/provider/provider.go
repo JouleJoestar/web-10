@@ -6,11 +6,11 @@ import (
 	"log"
 )
 
-type DatabaseProvider struct {
-	db *sql.DB
+type Provider struct {
+	conn *sql.DB
 }
 
-func NewProvider(host string, port int, user, password, dbName string) *DatabaseProvider {
+func NewProvider(host string, port int, user, password, dbName string) *Provider {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		host, port, user, password, dbName)
 
@@ -19,20 +19,30 @@ func NewProvider(host string, port int, user, password, dbName string) *Database
 		log.Fatal(err)
 	}
 
-	return &DatabaseProvider{db: conn}
+	return &Provider{conn: conn}
 }
 
-func (dp *DatabaseProvider) SelectUser(name string) (string, error) {
+func (p *Provider) SelectUser(name string) (string, error) {
 	var user string
-	row := dp.db.QueryRow("SELECT name FROM mytable WHERE name = $1", name)
+	row := p.conn.QueryRow("SELECT name FROM mytable WHERE name = $1", name)
 	err := row.Scan(&user)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", nil
+		}
 		return "", err
 	}
 	return user, nil
 }
 
-func (dp *DatabaseProvider) InsertUser(name string) error {
-	_, err := dp.db.Exec("INSERT INTO mytable (name) VALUES ($1)", name)
-	return err
+func (p *Provider) InsertUser(name string) error {
+	_, err := p.conn.Exec("INSERT INTO mytable (name) VALUES ($1)", name)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p *Provider) Close() error {
+	return p.conn.Close()
 }

@@ -1,19 +1,35 @@
 package usecase
 
-import "github.com/ValeryBMSTU/web-10/internal/query/provider"
+import (
+	"errors"
+)
 
 type Usecase struct {
-	dbProvider *provider.DatabaseProvider
+	defaultMsg string
+	p          Provider
 }
 
-func NewUsecase(dp *provider.DatabaseProvider) *Usecase {
-	return &Usecase{dbProvider: dp}
+func NewUsecase(defaultMsg string, p Provider) *Usecase {
+	return &Usecase{
+		defaultMsg: defaultMsg,
+		p:          p,
+	}
 }
 
-func (uc *Usecase) FetchUser(name string) (string, error) {
-	return uc.dbProvider.SelectUser(name)
+func (u *Usecase) GetUser(name string) (string, error) {
+	user, err := u.p.SelectUser(name)
+	if err != nil {
+		return "", err
+	}
+	if user == "" {
+		return u.defaultMsg, nil
+	}
+	return user, nil
 }
 
-func (uc *Usecase) CreateUser(name string) error {
-	return uc.dbProvider.InsertUser(name)
+func (u *Usecase) CreateUser(name string) error {
+	if name == "" {
+		return errors.New("имя пользователя не может быть пустым")
+	}
+	return nil
 }
